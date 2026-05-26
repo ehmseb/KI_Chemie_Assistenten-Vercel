@@ -1,3 +1,4 @@
+console.log('ENV:', JSON.stringify(process.env.SCHULKI_TOKEN));
 // api/proxy.js  –  Vercel Serverless Function
 const nodeFetch   = require('node-fetch');
 const fetchCookie = require('fetch-cookie');
