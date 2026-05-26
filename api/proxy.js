@@ -3,9 +3,6 @@ const nodeFetch   = require('node-fetch');
 const fetchCookie = require('fetch-cookie');
 const { CookieJar } = require('tough-cookie');
 
-// Vercel soll den Body nicht selbst parsen
-module.exports.config = { api: { bodyParser: false } };
-
 // Persistente Cookie-Jar – genau wie der Python-Proxy
 const jar   = new CookieJar();
 const fetch = fetchCookie(nodeFetch, jar);
@@ -69,7 +66,7 @@ async function readBody(req) {
   return Buffer.concat(chunks).toString();
 }
 
-module.exports = async (req, res) => {
+const handler = async (req, res) => {
   Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
 
   if (req.method === 'OPTIONS') return res.status(204).end();
@@ -132,3 +129,6 @@ module.exports = async (req, res) => {
     res.status(502).send(`Proxy-Fehler: ${e.message}`);
   }
 };
+
+handler.config = { api: { bodyParser: false } };
+module.exports = handler;
