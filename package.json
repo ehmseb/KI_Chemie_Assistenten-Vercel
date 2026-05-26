@@ -1,7 +1,12 @@
 {
   "name": "schulki-proxy",
   "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
+    "express": "^4.18.2",
     "node-fetch": "2.7.0",
     "fetch-cookie": "2.2.0",
     "tough-cookie": "^4.1.3"
