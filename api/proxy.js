@@ -90,6 +90,7 @@ module.exports = async (req, res) => {
       catch { human = new URLSearchParams(bodyStr).get('human') ?? ''; }
 
       console.log('human:', JSON.stringify(human));
+      console.log('token:', bearerToken ? bearerToken.slice(0,8)+'...' : 'LEER!');
 
       if (!csrfToken) await fetchCsrf();
 
