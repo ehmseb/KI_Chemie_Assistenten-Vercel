@@ -1,7 +1,10 @@
 // api/proxy.js  –  Vercel Serverless Function
-const nodeFetch  = require('node-fetch');
+const nodeFetch   = require('node-fetch');
 const fetchCookie = require('fetch-cookie');
 const { CookieJar } = require('tough-cookie');
+
+// Vercel soll den Body nicht selbst parsen
+module.exports.config = { api: { bodyParser: false } };
 
 // Persistente Cookie-Jar – genau wie der Python-Proxy
 const jar   = new CookieJar();
@@ -19,7 +22,6 @@ async function fetchCsrf() {
     jar.removeAllCookiesSync();
     csrfToken = null;
 
-    // fetch-cookie speichert Cookies automatisch in der Jar
     const res  = await fetch('https://schulki.de/login', {
       headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://schulki.de/' },
     });
@@ -47,8 +49,6 @@ async function fetchCsrf() {
 
 async function doPost(target, human, bearerToken) {
   const form = new URLSearchParams({ human, _token: csrfToken ?? '' });
-
-  // fetch-cookie sendet Cookies aus der Jar automatisch mit!
   return fetch(target, {
     method: 'POST',
     headers: {
@@ -61,6 +61,12 @@ async function doPost(target, human, bearerToken) {
     },
     body: form.toString(),
   });
+}
+
+async function readBody(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  return Buffer.concat(chunks).toString();
 }
 
 module.exports = async (req, res) => {
@@ -76,12 +82,14 @@ module.exports = async (req, res) => {
   try {
     // ── POST ────────────────────────────────────────────────
     if (req.method === 'POST') {
-      const chunks = [];
-      for await (const chunk of req) chunks.push(chunk);
-      const bodyStr = Buffer.concat(chunks).toString();
+      const bodyStr = await readBody(req);
+      console.log('Body empfangen:', bodyStr.slice(0, 100));
+
       let human = '';
       try   { human = JSON.parse(bodyStr).human ?? ''; }
       catch { human = new URLSearchParams(bodyStr).get('human') ?? ''; }
+
+      console.log('human:', JSON.stringify(human));
 
       if (!csrfToken) await fetchCsrf();
 
@@ -96,12 +104,12 @@ module.exports = async (req, res) => {
 
       const ct   = upstream.headers.get('content-type') ?? 'application/json';
       const data = await upstream.text();
+      console.log('Antwort status:', upstream.status, 'data:', data.slice(0, 100));
       res.setHeader('Content-Type', ct);
       return res.status(upstream.status).send(data);
     }
 
     // ── GET / SSE ──────────────────────────────────────────
-    // Für GET nutzen wir nodeFetch direkt (kein Cookie nötig)
     const upstream = await nodeFetch(target, {
       method: 'GET',
       headers: {
