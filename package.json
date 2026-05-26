@@ -2,7 +2,8 @@
   "name": "schulki-proxy",
   "version": "1.0.0",
   "dependencies": {
-    "node-fetch": "^2.7.0",
+    "node-fetch": "2.7.0",
+    "fetch-cookie": "^3.0.1",
     "tough-cookie": "^4.1.3"
   }
 }
